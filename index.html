@@ -1,62 +1,465 @@
 <!DOCTYPE html>
-<html>
-    <head>
-    <title> Lo-Ellen Robotics</title>
-    <link rel="icon" type="image/x-icon" href="icon.jpg">
+<html lang="en">
+<head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inconsolata">
+    <title>Lo-Ellen Robotics</title>
+    <link rel="icon" type="image/x-icon" href="icon.jpg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome 6.7.2 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    
+    <!-- Google Fonts: Inconsolata -->
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata&display=swap" rel="stylesheet">
+    
+    <!-- AOS CSS for Animations -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+    
+    <!-- Custom Styles -->
     <style>
-
-    .tab {
-                display: inline-block;
-                background-color: #ccc;
-                padding: 10px;
-                border-radius: 5px 5px 0 0;
-                margin-right: 10px;
-            }
-            .tab img {
-                height: 20px;
-                width: auto;
-                margin-right: 5px;
-            }
-
-    body, html {
-      height: 100%;
-      font-family: "Inconsolata", sans-serif;
-    }
-
-    .bgimg {
-      background-position: center;
-      background-size: cover;
-      background-image: url("Banner.png");
-      min-height: 75%;
-    }
-
-    .menu {
-      display: none;
-    }
-
-    .gallery {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        max-width: 800px;
-        margin: 0 auto;
-      }
-
-      .gallery img {
-        border: 3px solid black;
-        margin: 10px;
-        max-width: 100%;
-      }
-
+        body, html {
+            height: 100%;
+            font-family: 'Inconsolata', monospace;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        /* Three.js Canvas Styling */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none; /* Allows clicks to pass through */
+        }
+        /* Content Wrapper to ensure it's above the canvas */
+        .content {
+            position: relative;
+            z-index: 10;
+        }
+        /* Gallery Image Hover Effect */
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+        }
+        .gallery-item img {
+            transition: transform 0.3s ease;
+        }
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+        .gallery-item .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .gallery-item:hover .overlay {
+            opacity: 1;
+        }
+        /* Button Hover Effects */
+        .btn-hover-effect {
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        .btn-hover-effect:hover {
+            transform: translateY(-3px) scale(1.05);
+            background-color: #1d4ed8; /* Tailwind blue-700 */
+        }
+        /* Auto-Scroll Button Styling */
+        .auto-scroll-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1d4ed8; /* Tailwind blue-700 */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .auto-scroll-btn:hover {
+            background-color: #2563eb; /* Tailwind blue-600 */
+            transform: translateX(-50%) translateY(-5px) scale(1.1);
+        }
     </style>
-    </head>
-   <body style="background-color: #000000;">
-       <img src="images/loellenroboticslogo.png" style="max-width: 75%; display:  block; margin:0 auto;" align="center">
-    <br><br>
-       <p align="center" style="color: white;">Coming soon...</p>
-    </body> 
+</head>
+<body class="bg-black text-white relative">
+
+    <!-- Three.js Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Navigation Bar -->
+    <nav class="bg-gray-800 bg-opacity-90 fixed w-full z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <img src="images/loellenroboticslogo.png" class="h-10 w-auto" alt="Lo-Ellen Robotics Logo">
+                    <div class="hidden md:block">
+                        <div class="ml-10 flex items-baseline space-x-4">
+                            <a href="#" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="100">
+                                <i class="fas fa-home mr-2"></i> Home
+                            </a>
+                            <a href="#about" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="200">
+                                <i class="fas fa-info-circle mr-2"></i> About
+                            </a>
+                            <a href="#services" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="300">
+                                <i class="fas fa-cogs mr-2"></i> Services
+                            </a>
+                            <a href="#gallery" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="400">
+                                <i class="fas fa-images mr-2"></i> Gallery
+                            </a>
+                            <a href="#contact" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="500">
+                                <i class="fas fa-envelope mr-2"></i> Contact
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Mobile Menu Button -->
+                <div class="-mr-2 flex md:hidden">
+                    <button id="mobile-menu-button" class="bg-gray-800 inline-flex items-center justify-center p-2 rounded-md hover:bg-gray-700 focus:outline-none">
+                        <i class="fas fa-bars text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-gray-800 bg-opacity-90">
+            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="100">
+                <i class="fas fa-home mr-2"></i> Home
+            </a>
+            <a href="#about" class="block px-4 py-2 text-sm hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="200">
+                <i class="fas fa-info-circle mr-2"></i> About
+            </a>
+            <a href="#services" class="block px-4 py-2 text-sm hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="300">
+                <i class="fas fa-cogs mr-2"></i> Services
+            </a>
+            <a href="#gallery" class="block px-4 py-2 text-sm hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="400">
+                <i class="fas fa-images mr-2"></i> Gallery
+            </a>
+            <a href="#contact" class="block px-4 py-2 text-sm hover:bg-gray-700 flex items-center" data-aos="fade-down" data-aos-delay="500">
+                <i class="fas fa-envelope mr-2"></i> Contact
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content Wrapper -->
+    <div class="content">
+
+        <!-- Hero Section -->
+        <section class="flex items-center justify-center min-h-screen relative">
+            <div class="text-center" data-aos="zoom-in">
+                <img src="images/loellenroboticslogo.png" class="mx-auto mb-4 w-3/4 md:w-1/2" alt="Lo-Ellen Robotics Logo">
+                <h1 class="text-5xl md:text-7xl font-bold mb-4">Welcome to Lo-Ellen Robotics</h1>
+                <p class="text-2xl md:text-3xl">Innovating the Future of Robotics</p>
+                <p class="mt-2 text-xl md:text-2xl text-gray-300">Coming Soon...</p>
+                <a href="#about" class="mt-6 inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded btn-hover-effect" data-aos="fade-up" data-aos-delay="200">
+                    Learn More
+                </a>
+            </div>
+            <!-- Auto-Scroll Button -->
+            <button class="auto-scroll-btn" onclick="scrollToSection('about')" aria-label="Scroll to About Section">
+                <i class="fas fa-chevron-down fa-2x"></i>
+            </button>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="py-20 bg-black">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-4xl font-bold text-center mb-12" data-aos="fade-up">About Us</h2>
+                <div class="flex flex-col md:flex-row items-center">
+                    <div class="md:w-1/2" data-aos="fade-right">
+                        <img src="https://via.placeholder.com/500" alt="About Us Image" class="rounded-lg shadow-lg">
+                    </div>
+                    <div class="md:w-1/2 md:pl-12 mt-8 md:mt-0" data-aos="fade-left">
+                        <p class="text-gray-400 text-lg leading-relaxed">
+                            Lo-Ellen Robotics is dedicated to pushing the boundaries of robotic technology. Our mission is to create innovative solutions that enhance everyday life and drive progress in various industries. With a team of passionate engineers and designers, we strive to develop cutting-edge robotics systems that are both efficient and user-friendly.
+                        </p>
+                        <p class="text-gray-400 text-lg leading-relaxed mt-4">
+                            From autonomous vehicles to intelligent home assistants, our projects are at the forefront of modern robotics. We believe in the power of technology to transform the world, and we're committed to making that transformation a reality.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services" class="py-20 bg-gray-900">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-4xl font-bold text-center mb-12" data-aos="fade-up">Our Services</h2>
+                <div class="flex flex-wrap justify-center gap-8">
+                    <!-- Service 1 -->
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80 transform hover:scale-105 transition duration-300" data-aos="zoom-in" data-aos-delay="100">
+                        <i class="fas fa-robot text-5xl text-blue-500 mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-2">Robotic Design</h3>
+                        <p class="text-gray-400">Custom robotic solutions tailored to your needs, ensuring precision and efficiency in every project.</p>
+                    </div>
+                    <!-- Service 2 -->
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80 transform hover:scale-105 transition duration-300" data-aos="zoom-in" data-aos-delay="200">
+                        <i class="fas fa-code text-5xl text-blue-500 mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-2">Software Development</h3>
+                        <p class="text-gray-400">Innovative software for seamless robotic operations, enhancing functionality and user experience.</p>
+                    </div>
+                    <!-- Service 3 -->
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80 transform hover:scale-105 transition duration-300" data-aos="zoom-in" data-aos-delay="300">
+                        <i class="fas fa-cogs text-5xl text-blue-500 mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-2">Automation Solutions</h3>
+                        <p class="text-gray-400">Enhancing efficiency through advanced automation, streamlining processes across various industries.</p>
+                    </div>
+                    <!-- Service 4 -->
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80 transform hover:scale-105 transition duration-300" data-aos="zoom-in" data-aos-delay="400">
+                        <i class="fas fa-shield-alt text-5xl text-blue-500 mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-2">Security Robotics</h3>
+                        <p class="text-gray-400">Developing robust security robots that ensure safety and surveillance with cutting-edge technology.</p>
+                    </div>
+                    <!-- Service 5 -->
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80 transform hover:scale-105 transition duration-300" data-aos="zoom-in" data-aos-delay="500">
+                        <i class="fas fa-network-wired text-5xl text-blue-500 mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-2">Networking Solutions</h3>
+                        <p class="text-gray-400">Providing comprehensive networking solutions to support your robotic infrastructure.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gallery Section -->
+        <section id="gallery" class="py-20 bg-black">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-4xl font-bold text-center mb-12" data-aos="fade-up">Gallery</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <!-- Gallery Image 1 -->
+                    <div class="gallery-item">
+                        <img src="https://via.placeholder.com/400" alt="Gallery Image 1" class="w-full h-64 object-cover rounded-lg border-4 border-black">
+                        <div class="overlay">
+                            <i class="fas fa-search-plus text-white text-3xl"></i>
+                        </div>
+                    </div>
+                    <!-- Gallery Image 2 -->
+                    <div class="gallery-item">
+                        <img src="https://via.placeholder.com/400" alt="Gallery Image 2" class="w-full h-64 object-cover rounded-lg border-4 border-black">
+                        <div class="overlay">
+                            <i class="fas fa-search-plus text-white text-3xl"></i>
+                        </div>
+                    </div>
+                    <!-- Gallery Image 3 -->
+                    <div class="gallery-item">
+                        <img src="https://via.placeholder.com/400" alt="Gallery Image 3" class="w-full h-64 object-cover rounded-lg border-4 border-black">
+                        <div class="overlay">
+                            <i class="fas fa-search-plus text-white text-3xl"></i>
+                        </div>
+                    </div>
+                    <!-- Gallery Image 4 -->
+                    <div class="gallery-item">
+                        <img src="https://via.placeholder.com/400" alt="Gallery Image 4" class="w-full h-64 object-cover rounded-lg border-4 border-black">
+                        <div class="overlay">
+                            <i class="fas fa-search-plus text-white text-3xl"></i>
+                        </div>
+                    </div>
+                    <!-- Gallery Image 5 -->
+                    <div class="gallery-item">
+                        <img src="https://via.placeholder.com/400" alt="Gallery Image 5" class="w-full h-64 object-cover rounded-lg border-4 border-black">
+                        <div class="overlay">
+                            <i class="fas fa-search-plus text-white text-3xl"></i>
+                        </div>
+                    </div>
+                    <!-- Gallery Image 6 -->
+                    <div class="gallery-item">
+                        <img src="https://via.placeholder.com/400" alt="Gallery Image 6" class="w-full h-64 object-cover rounded-lg border-4 border-black">
+                        <div class="overlay">
+                            <i class="fas fa-search-plus text-white text-3xl"></i>
+                        </div>
+                    </div>
+                    <!-- Gallery Image 7 -->
+                    <div class="gallery-item">
+                        <img src="https://via.placeholder.com/400" alt="Gallery Image 7" class="w-full h-64 object-cover rounded-lg border-4 border-black">
+                        <div class="overlay">
+                            <i class="fas fa-search-plus text-white text-3xl"></i>
+                        </div>
+                    </div>
+                    <!-- Gallery Image 8 -->
+                    <div class="gallery-item">
+                        <img src="https://via.placeholder.com/400" alt="Gallery Image 8" class="w-full h-64 object-cover rounded-lg border-4 border-black">
+                        <div class="overlay">
+                            <i class="fas fa-search-plus text-white text-3xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-20 bg-gray-900">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-4xl font-bold text-center mb-12" data-aos="fade-up">Contact Us</h2>
+                <form class="max-w-lg mx-auto" data-aos="fade-up" data-aos-delay="100" action="#" method="POST">
+                    <div class="mb-6">
+                        <label class="block text-gray-300 text-sm font-bold mb-2" for="name">Name</label>
+                        <input class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="name" type="text" placeholder="Your Name" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-300 text-sm font-bold mb-2" for="email">Email</label>
+                        <input class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="Your Email" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-300 text-sm font-bold mb-2" for="message">Message</label>
+                        <textarea class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="message" rows="5" placeholder="Your Message" required></textarea>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded btn-hover-effect" type="submit">
+                            Send Message
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 py-6">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <p class="text-gray-400">&copy; 2025 Lo-Ellen Robotics. All rights reserved.</p>
+                <div class="mt-4">
+                    <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </footer>
+
+    </div> <!-- End of Content Wrapper -->
+
+    <!-- Tailwind CSS Mobile Menu Toggle Script -->
+    <script>
+        const menuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Auto-Scroll Function
+        function scrollToSection(id) {
+            const section = document.getElementById(id);
+            if (section) {
+                window.scrollTo({
+                    top: section.offsetTop - 60, // Adjust for fixed navbar height
+                    behavior: 'smooth'
+                });
+            }
+        }
+    </script>
+
+    <!-- AOS JS for Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true,
+        });
+    </script>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Three.js Background Animation with Single Yellow Torus Knot
+
+        // Initialize Scene, Camera, Renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+
+        const renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('bg-canvas'),
+            alpha: true,
+            antialias: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Add Ambient Light
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        // Add Directional Light
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+
+        // Create a Group for Orbiting
+        const group = new THREE.Group();
+        scene.add(group);
+
+        // Create a Single Yellow Torus Knot
+        const torusKnotGeometry = new THREE.TorusKnotGeometry(1, 0.4, 100, 16);
+        const torusKnotMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffff00, // Yellow color
+            metalness: 0.5,
+            roughness: 0.2,
+            transparent: true,
+            opacity: 0.8
+        });
+        const torusKnot = new THREE.Mesh(torusKnotGeometry, torusKnotMaterial);
+        group.add(torusKnot);
+
+        // Set Initial Camera Position
+        camera.position.z = 5;
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Variables for Scroll Interaction
+        let scrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+            scrollY = window.scrollY;
+        });
+
+        // Variables for Mouse Interaction
+        let mouseX = 0, mouseY = 0;
+        window.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // Animation Loop
+        const animate = function () {
+            requestAnimationFrame(animate);
+
+            // Scroll-Based Orbiting
+            const targetRotation = scrollY * 0.0005;
+            group.rotation.y += (targetRotation - group.rotation.y) * 0.05;
+
+            // Mouse-Based Rotation
+            group.rotation.x += (mouseY * 0.05 - group.rotation.x) * 0.05;
+            group.rotation.y += (mouseX * 0.05 - group.rotation.y) * 0.05;
+
+            // Rotate the Torus Knot for Dynamic Effect
+            torusKnot.rotation.x += 0.01;
+            torusKnot.rotation.y += 0.01;
+
+            renderer.render(scene, camera);
+        };
+
+        animate();
+    </script>
+</body>
 </html>
