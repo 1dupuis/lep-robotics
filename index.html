@@ -33,13 +33,63 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1; /* Behind all content */
+            z-index: -2; /* Behind all content and loading screen */
             pointer-events: none; /* Allows clicks to pass through */
+        }
+        /* Loading Screen Styling */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        /* Logo in Loading Screen */
+        #loading-logo {
+            width: 150px;
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        /* Progress Bar Container */
+        #progress-container {
+            width: 80%;
+            max-width: 400px;
+            height: 10px;
+            background-color: #333;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        /* Progress Bar */
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #1d4ed8; /* Tailwind blue-700 */
+            transition: width 0.3s ease;
         }
         /* Content Wrapper to ensure it's above the canvas */
         .content {
             position: relative;
             z-index: 10;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        .content.visible {
+            opacity: 1;
         }
         /* Gallery Image Hover Effect */
         .gallery-item {
@@ -100,6 +150,14 @@
     <!-- Three.js Background -->
     <canvas id="bg-canvas"></canvas>
 
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <img src="images/loellenroboticslogo.png" id="loading-logo" alt="Lo-Ellen Robotics Logo">
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
     <!-- Navigation Bar -->
     <nav class="bg-gray-800 bg-opacity-90 fixed w-full z-50 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -128,7 +186,7 @@
                 </div>
                 <!-- Mobile Menu Button -->
                 <div class="-mr-2 flex md:hidden">
-                    <button id="mobile-menu-button" class="bg-gray-800 inline-flex items-center justify-center p-2 rounded-md hover:bg-gray-700 focus:outline-none">
+                    <button id="mobile-menu-button" class="bg-gray-800 inline-flex items-center justify-center p-2 rounded-md hover:bg-gray-700 focus:outline-none" aria-label="Toggle Mobile Menu">
                         <i class="fas fa-bars text-white"></i>
                     </button>
                 </div>
@@ -330,10 +388,10 @@
             <div class="max-w-7xl mx-auto px-4 text-center">
                 <p class="text-gray-400">&copy; 2025 Lo-Ellen Robotics. All rights reserved.</p>
                 <div class="mt-4">
-                    <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-linkedin-in"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-white mx-2"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                 </div>
             </div>
         </footer>
@@ -508,6 +566,96 @@
         };
 
         animate();
+    </script>
+
+    <!-- Loading Screen Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingScreen = document.getElementById('loading-screen');
+            const progressBar = document.getElementById('progress-bar');
+            const content = document.querySelector('.content');
+
+            let progress = 0;
+            const fakeLoad = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(fakeLoad);
+                    // Fade out loading screen
+                    loadingScreen.classList.add('hidden');
+                    // Make content visible
+                    content.classList.add('visible');
+                }
+                progressBar.style.width = progress + '%';
+            }, 500);
+
+            // Optional: Real loading progress using window load event
+            /*
+            window.addEventListener('load', () => {
+                progress = 100;
+                progressBar.style.width = progress + '%';
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                    content.classList.add('visible');
+                }, 500);
+            });
+            */
+        });
+    </script>
+
+    <!-- Enhanced Three.js for Loading Animation -->
+    <script>
+        // Modify Three.js Animation for Loading Screen
+
+        const bgCanvas = document.getElementById('bg-canvas');
+        const rendererThree = new THREE.WebGLRenderer({
+            canvas: bgCanvas,
+            alpha: true,
+            antialias: true
+        });
+        rendererThree.setSize(window.innerWidth, window.innerHeight);
+        rendererThree.setPixelRatio(window.devicePixelRatio);
+
+        // Reuse existing scene, camera, and objects
+        // Adjust particle speed for loading
+        let isLoading = true;
+
+        // Update animate function to handle loading state
+        const animateThree = function () {
+            requestAnimationFrame(animateThree);
+
+            if (isLoading) {
+                // Increase particle speed during loading
+                particles.rotation.y += 0.02; // Faster rotation
+                group.rotation.y += 0.01; // Faster orbit
+                torusKnot.rotation.x += 0.02;
+                torusKnot.rotation.y += 0.02;
+            } else {
+                // Normal speed after loading
+                particles.rotation.y += 0.0005;
+                group.rotation.y += 0.002;
+                torusKnot.rotation.x += 0.005;
+                torusKnot.rotation.y += 0.005;
+            }
+
+            rendererThree.render(scene, camera);
+        };
+
+        animateThree();
+
+        // Transition to normal speed after loading
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingScreen = document.getElementById('loading-screen');
+
+            const observer = new MutationObserver(() => {
+                if (loadingScreen.classList.contains('hidden')) {
+                    isLoading = false;
+                    observer.disconnect();
+                }
+            });
+
+            observer.observe(loadingScreen, { attributes: true });
+        });
     </script>
 </body>
 </html>
