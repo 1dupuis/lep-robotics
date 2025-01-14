@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lo-Ellen Robotics</title>
+    <link rel="icon" type="image/x-icon" href="https://1dupuis.github.io/lep-robotics/images/loellenroboticssquarelogo.jpg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FontAwesome 6.7.2 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- Google Fonts: Inconsolata -->
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata&display=swap" rel="stylesheet">
+
+    <!-- AOS CSS for Animations -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <style>
+        /* Smooth scrolling for anchor links */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: 'Inconsolata', monospace;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* Gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f59e0b; /* Amber-500 */
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #fbbf24; /* Amber-400 */
+        }
+
+        /* Three.js Canvas Styling */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none; /* Allows clicks to pass through */
+        }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        #loading-logo {
+            width: 150px;
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Progress Bar */
+        #progress-container {
+            width: 80%;
+            max-width: 400px;
+            height: 10px;
+            background-color: #333;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #f59e0b;
+            transition: width 0.3s ease;
+        }
+
+        /* Content Wrapper */
+        .content {
+            position: relative;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        .content.visible {
+            opacity: 1;
+        }
+
+        /* Button Hover Effects */
+        .btn-hover-effect {
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        .btn-hover-effect:hover {
+            transform: translateY(-3px) scale(1.05);
+            background-color: #1d4ed8; 
+        }
+
+        /* Bouncing arrow if near top */
+        #scroll-arrow {
+            animation: bounce 1.5s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-10px); }
+        }
+
+        /* Secret Menu styling */
+        #secret-menu {
+            display: none; /* hidden by default */
+            position: absolute;
+            top: 3rem; 
+            right: 1rem;
+            background: #1f2937;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0.5rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        #secret-menu a {
+            display: block;
+            color: #fff;
+            padding: 0.5rem;
+            text-decoration: none;
+            margin: 0.2rem 0;
+        }
+        #secret-menu a:hover {
+            background: #374151;
+        }
+
+        /* Make top nav more appealing */
+        #top-nav {
+            background-color: #0f172a; /* Gray-900 */
+            border-bottom: 1px solid #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        #top-nav .nav-link:hover {
+            background-color: #1f2937; /* Gray-800 hover */
+        }
+    </style>
+</head>
+<body class="bg-black text-white relative">
+
+    <!-- Three.js Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <img src="https://1dupuis.github.io/lep-robotics/images/loellenroboticslogo.png"
+             id="loading-logo"
+             alt="Lo-Ellen Robotics Logo">
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav id="top-nav" class="bg-gray-900 bg-opacity-95 fixed w-full z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <img src="https://1dupuis.github.io/lep-robotics/images/loellenroboticslogo.png"
+                         class="h-10 w-auto mr-4"
+                         alt="Lo-Ellen Robotics Logo">
+                    <div class="hidden md:block">
+                        <div class="flex items-baseline space-x-4">
+                            <a href="#"
+                               class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-800 flex items-center"
+                               data-aos="fade-down"
+                               data-aos-delay="100">
+                                <i class="fas fa-home mr-2"></i> Home
+                            </a>
+                            <!-- Add more top nav links here if needed -->
+                        </div>
+                    </div>
+                </div>
+                <!-- Secret Toggle Button -->
+                <button id="secret-toggle" class="text-white bg-gray-700 px-3 py-2 rounded hover:bg-gray-600 transition">
+                    Secret
+                </button>
+                <!-- Mobile Menu Button -->
+                <div class="-mr-2 flex md:hidden">
+                    <button id="mobile-menu-button"
+                            class="bg-gray-800 inline-flex items-center justify-center p-2 rounded-md hover:bg-gray-700 focus:outline-none"
+                            aria-label="Toggle Mobile Menu">
+                        <i class="fas fa-bars text-white"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden bg-gray-800 bg-opacity-90 mt-2 rounded">
+                <a href="#"
+                   class="block px-4 py-2 text-sm hover:bg-gray-700 flex items-center"
+                   data-aos="fade-down"
+                   data-aos-delay="100">
+                    <i class="fas fa-home mr-2"></i> Home
+                </a>
+            </div>
+
+            <!-- Secret Menu: UFO + Laser -->
+            <div id="secret-menu">
+                <a href="#" id="btn-ufo"><i class="fas fa-globe"></i> Spawn UFO</a>
+                <a href="#" id="btn-laser"><i class="fas fa-bullseye"></i> Shoot Laser</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Wrapper -->
+    <div class="content">
+
+        <!-- Hero Section -->
+        <section class="flex flex-col items-center justify-center min-h-screen relative"
+                 style="background-color: rgba(17,17,17,0.0);">
+            <div class="text-center" data-aos="zoom-in">
+                <img src="https://1dupuis.github.io/lep-robotics/images/loellenroboticslogo.png"
+                     class="mx-auto mb-4 w-3/4 md:w-1/2"
+                     alt="Lo-Ellen Robotics Logo">
+                <p class="mt-2 text-xl md:text-2xl text-gray-800">
+                    <!-- Innovating the Future of Robotics -->
+                </p>
+            </div>
+
+            <!-- Bouncing Arrow at Bottom (visible near top) -->
+            <div class="absolute bottom-8">
+                <i id="scroll-arrow" class="fas fa-arrow-down text-3xl"></i>
+            </div>
+        </section>
+
+        <!-- Some extra content to allow scrolling -->
+        <section class="flex items-center justify-center min-h-screen bg-gray-700 bg-opacity-75">
+            <h1 class="text-4xl">Test Page 1</h1>
+        </section>
+
+        <section class="flex items-center justify-center min-h-screen bg-gray-600 bg-opacity-80">
+            <h1 class="text-4xl">Test Page 2</h1>
+        </section>
+
+        <section class="flex items-center justify-center min-h-screen bg-gray-500 bg-opacity-85">
+            <h1 class="text-4xl">Test Page 3</h1>
+        </section>
+
+        <section class="flex items-center justify-center min-h-screen bg-gray-400 bg-opacity-90">
+            <h1 class="text-4xl">Test Page 4</h1>
+        </section>
+
+        <section class="flex items-center justify-center min-h-screen bg-gray-300 bg-opacity-95">
+            <h1 class="text-4xl">Test Page 5</h1>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 py-6">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <p class="text-gray-400">&copy; 2025 Lo-Ellen Robotics. All rights reserved.</p>
+                <div class="mt-4">
+                    <a href="#" class="text-gray-400 hover:text-white mx-2" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white mx-2" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </footer>
+
+    </div> <!-- End of Content Wrapper -->
+
+    <!-- AOS JS for Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true,
+        });
+    </script>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls (optional for debugging) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Page Scripts -->
+    <script>
+        // ===========================
+        // SECRET MENU
+        // ===========================
+        const secretToggle = document.getElementById('secret-toggle');
+        const secretMenu   = document.getElementById('secret-menu');
+        let secretOpen     = false;
+
+        secretToggle.addEventListener('click', () => {
+            secretOpen = !secretOpen;
+            secretMenu.style.display = secretOpen ? 'block' : 'none';
+        });
+
+        // Mobile Menu
+        const menuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        menuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Bouncing Arrow hide if scrolled
+        const scrollArrow = document.getElementById('scroll-arrow');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 60) {
+                scrollArrow.style.opacity = '0';
+            } else {
+                scrollArrow.style.opacity = '1';
+            }
+        });
+    </script>
+
+    <script>
+        // ===========================
+        // SETTINGS
+        // ===========================
+        const SETTINGS = {
+            laserSpeed: 0.3,
+            laserLife:  1.5,
+            ufoRotationSpeed: 1.0,
+            ufoHoverSpeed: 0.5
+        };
+
+        function clamp(v, min, max) {
+            return Math.max(min, Math.min(max, v));
+        }
+        function randomRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        let lastTime = 0;
+
+        // ================
+        // SCENE SETUP
+        // ================
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.z = 12;
+
+        const renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('bg-canvas'),
+            alpha: true,
+            antialias: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 7.5);
+        scene.add(directionalLight);
+
+        // Starfield
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 400;
+        const starPosArray = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i++) {
+            starPosArray[i] = (Math.random() - 0.5) * 100;
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPosArray, 3));
+        const starMat = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.2,
+            transparent: true,
+            opacity: 0.8
+        });
+        const starfield = new THREE.Points(starGeo, starMat);
+        scene.add(starfield);
+
+        // ================
+        // ROBOT GROUP
+        // ================
+        const robotGroup = new THREE.Group();
+        scene.add(robotGroup);
+
+        // We’ll create multiple pivot groups so arms rotate around shoulders correctly.
+        let rightShoulderPivot = null;
+        let leftShoulderPivot  = null;
+        let eyes = [];
+
+        // Helper function for centering cylinder geometry at the top pivot
+        function createCylinderAtTop(radius, height, radialSegments, mat) {
+            const group = new THREE.Group();
+            const geom = new THREE.CylinderGeometry(radius, radius, height, radialSegments);
+            const mesh = new THREE.Mesh(geom, mat);
+            // shift mesh so top is local y=0, bottom is negative
+            mesh.position.y = -height / 2;
+            group.add(mesh);
+            return group;
+        }
+
+        function createImprovedRobot() {
+            const robot = new THREE.Group();
+
+            // ================
+            // LEGS & FEET
+            // ================
+            const legRadius = 0.25;
+            const legHeight = 1.2;
+            const legSegments = 16;
+            const legMaterial = new THREE.MeshStandardMaterial({
+                color: 0x333333,
+                metalness: 0.2,
+                roughness: 0.6
+            });
+
+            // Left leg
+            const leftLeg = createCylinderAtTop(legRadius, legHeight, legSegments, legMaterial);
+            leftLeg.position.set(-0.45, -0.6, 0);
+            robot.add(leftLeg);
+
+            // Right leg
+            const rightLeg = createCylinderAtTop(legRadius, legHeight, legSegments, legMaterial);
+            rightLeg.position.set(0.45, -0.6, 0);
+            robot.add(rightLeg);
+
+            // Feet
+            const footGeom = new THREE.BoxGeometry(0.5, 0.2, 0.8);
+            const footMat  = new THREE.MeshStandardMaterial({
+                color: 0x222222,
+                metalness: 0.3,
+                roughness: 0.6
+            });
+            const leftFoot  = new THREE.Mesh(footGeom, footMat);
+            leftFoot.position.set(-0.45, -1.2, 0.1);
+            robot.add(leftFoot);
+
+            const rightFoot = new THREE.Mesh(footGeom, footMat);
+            rightFoot.position.set(0.45, -1.2, 0.1);
+            robot.add(rightFoot);
+
+            // ================
+            // TORSO
+            // ================
+            const torsoGeom = new THREE.BoxGeometry(1.8, 2.2, 1.0);
+            const torsoMat  = new THREE.MeshStandardMaterial({
+                color: 0x666666,
+                metalness: 0.4,
+                roughness: 0.4
+            });
+            const torso = new THREE.Mesh(torsoGeom, torsoMat);
+            torso.position.set(0, 0.3, 0);
+            robot.add(torso);
+
+            // Some decorative details on the torso
+            const detailGeom = new THREE.BoxGeometry(0.2, 1, 0.1);
+            const detailMat  = new THREE.MeshStandardMaterial({
+                color: 0x444444,
+                metalness: 0.5,
+                roughness: 0.3
+            });
+            for (let i = -1; i <= 1; i += 2) {
+                const detail = new THREE.Mesh(detailGeom, detailMat);
+                detail.position.set(i * 0.7, 0.3, 0.55);
+                robot.add(detail);
+            }
+
+            // ================
+            // ARMS
+            // ================
+            const shoulderSphereGeom = new THREE.SphereGeometry(0.25, 16, 16);
+            const armCylinderRadius  = 0.2;
+            const armCylinderHeight  = 1.2;
+            const armMaterial = new THREE.MeshStandardMaterial({
+                color: 0x555555,
+                metalness: 0.3,
+                roughness: 0.5
+            });
+            const handGeom = new THREE.BoxGeometry(0.4, 0.3, 0.4);
+            const handMat  = new THREE.MeshStandardMaterial({
+                color: 0xffcc00,
+                metalness: 0.2,
+                roughness: 0.5
+            });
+            const forearmHeight = 0.9;
+
+            // LEFT ARM
+            leftShoulderPivot = new THREE.Group();
+            leftShoulderPivot.position.set(-1.0, 1.2, 0);
+            robot.add(leftShoulderPivot);
+
+            const leftShoulderSphere = new THREE.Mesh(shoulderSphereGeom, armMaterial);
+            leftShoulderSphere.position.set(0, 0, 0);
+            leftShoulderPivot.add(leftShoulderSphere);
+
+            // Upper arm (left)
+            const leftUpperArm = createCylinderAtTop(armCylinderRadius, armCylinderHeight, 16, armMaterial);
+            leftUpperArm.position.set(0, 0, 0);
+            leftShoulderPivot.add(leftUpperArm);
+
+            // Left elbow pivot
+            const leftElbowPivot = new THREE.Group();
+            leftElbowPivot.position.set(0, -armCylinderHeight, 0);
+            leftUpperArm.add(leftElbowPivot);
+
+            // Forearm (left)
+            const leftForearm = createCylinderAtTop(armCylinderRadius * 0.8, forearmHeight, 16, armMaterial);
+            leftForearm.position.set(0, 0, 0);
+            leftElbowPivot.add(leftForearm);
+
+            // Left wrist pivot
+            const leftWristPivot = new THREE.Group();
+            leftWristPivot.position.set(0, -forearmHeight, 0);
+            leftForearm.add(leftWristPivot);
+
+            // Left hand
+            const leftHand = new THREE.Mesh(handGeom, handMat);
+            leftHand.position.set(0, -0.15, 0);
+            leftWristPivot.add(leftHand);
+
+            // RIGHT ARM (the one waving)
+            rightShoulderPivot = new THREE.Group();
+            rightShoulderPivot.position.set(1.0, 1.2, 0);
+            robot.add(rightShoulderPivot);
+
+            const rightShoulderSphere = new THREE.Mesh(shoulderSphereGeom, armMaterial);
+            rightShoulderSphere.position.set(0, 0, 0);
+            rightShoulderPivot.add(rightShoulderSphere);
+
+            // NOTE: We'll rotate the pivot so it's already up in the air by default
+            // e.g., ~-1.0 rad around z means arm is above the head
+            rightShoulderPivot.rotation.z = -1.0;
+
+            // Upper arm (right)
+            const rightUpperArm = createCylinderAtTop(armCylinderRadius, armCylinderHeight, 16, armMaterial);
+            rightUpperArm.position.set(0, 0, 0);
+            rightShoulderPivot.add(rightUpperArm);
+
+            // Right elbow pivot
+            const rightElbowPivot = new THREE.Group();
+            rightElbowPivot.position.set(0, -armCylinderHeight, 0);
+            rightUpperArm.add(rightElbowPivot);
+
+            // Forearm (right)
+            const rightForearm = createCylinderAtTop(armCylinderRadius * 0.8, forearmHeight, 16, armMaterial);
+            rightForearm.position.set(0, 0, 0);
+            rightElbowPivot.add(rightForearm);
+
+            // Right wrist pivot
+            const rightWristPivot = new THREE.Group();
+            rightWristPivot.position.set(0, -forearmHeight, 0);
+            rightForearm.add(rightWristPivot);
+
+            // Right hand
+            const rightHand = new THREE.Mesh(handGeom, handMat);
+            rightHand.position.set(0, -0.15, 0);
+            rightWristPivot.add(rightHand);
+
+            // ================
+            // NECK & HEAD
+            // ================
+            const neckGeom = new THREE.CylinderGeometry(0.15, 0.15, 0.3, 16);
+            const neckMat  = new THREE.MeshStandardMaterial({
+                color: 0x444444,
+                metalness: 0.5,
+                roughness: 0.4
+            });
+            const neck = new THREE.Mesh(neckGeom, neckMat);
+            neck.position.set(0, 1.5, 0);
+            robot.add(neck);
+
+            const headGeom = new THREE.BoxGeometry(1, 1, 1);
+            const headMat  = new THREE.MeshStandardMaterial({
+                color: 0xcccccc,
+                metalness: 0.4,
+                roughness: 0.3
+            });
+            const head = new THREE.Mesh(headGeom, headMat);
+            head.position.set(0, 2.2, 0);
+            robot.add(head);
+
+            // Eyes
+            const eyeGeom = new THREE.SphereGeometry(0.12, 16, 16);
+            const eyeMat  = new THREE.MeshStandardMaterial({
+                color: 0x00ff00,
+                emissive: 0x00ff00,
+                emissiveIntensity: 0.6
+            });
+            const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
+            leftEye.position.set(-0.22, 2.25, 0.45);
+            robot.add(leftEye);
+            eyes.push(leftEye);
+
+            const rightEye = new THREE.Mesh(eyeGeom, eyeMat);
+            rightEye.position.set(0.22, 2.25, 0.45);
+            robot.add(rightEye);
+            eyes.push(rightEye);
+
+            // Mouth (optional)
+            const mouthGeom = new THREE.BoxGeometry(0.4, 0.1, 0.1);
+            const mouthMat  = new THREE.MeshStandardMaterial({
+                color: 0xff0000,
+                metalness: 0.1,
+                roughness: 0.7
+            });
+            const mouth = new THREE.Mesh(mouthGeom, mouthMat);
+            mouth.position.set(0, 1.9, 0.52);
+            robot.add(mouth);
+
+            // Antenna on top of the head (optional)
+            const antennaGeom = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
+            const antennaMat  = new THREE.MeshStandardMaterial({
+                color: 0xff0000,
+                emissive: 0xff0000,
+                emissiveIntensity: 0.3
+            });
+            const antenna = new THREE.Mesh(antennaGeom, antennaMat);
+            antenna.position.set(0, 2.7, 0);
+            robot.add(antenna);
+
+            return robot;
+        }
+
+        // Build the improved robot and add to group
+        const improvedRobot = createImprovedRobot();
+        robotGroup.add(improvedRobot);
+
+        // Position it nicely
+        robotGroup.position.y = 3.75;
+
+        // ================
+        // UFO
+        // ================
+        let ufoGroup = null;
+        function createUFO() {
+            const ufo = new THREE.Group();
+
+            // Main disk
+            const diskGeom = new THREE.CylinderGeometry(1.5, 1.5, 0.3, 32, 1, false);
+            const diskMat  = new THREE.MeshStandardMaterial({
+                color: 0xaaaaaa,
+                metalness: 0.5,
+                roughness: 0.3
+            });
+            const disk = new THREE.Mesh(diskGeom, diskMat);
+            ufo.add(disk);
+
+            // Dome on top (+Y)
+            const domeGeom = new THREE.SphereGeometry(0.5, 16, 8, 0, Math.PI*2, 0, Math.PI/2);
+            const domeMat  = new THREE.MeshStandardMaterial({
+                color: 0x00aaff,
+                emissive: 0x00aaff,
+                emissiveIntensity: 0.2,
+                transparent: true,
+                opacity: 0.6
+            });
+            const dome = new THREE.Mesh(domeGeom, domeMat);
+            dome.position.y = 0.15;
+            ufo.add(dome);
+
+            // Store offset for hover
+            ufo.userData = {
+                hoverOffset: Math.random() * 2*Math.PI
+            };
+
+            return ufo;
+        }
+
+        function spawnUFO() {
+            if (ufoGroup) return; // only one UFO for now
+            ufoGroup = createUFO();
+            ufoGroup.position.set(2, 1, -3);
+            scene.add(ufoGroup);
+        }
+
+        function updateUFO(dt, time) {
+            if (!ufoGroup) return;
+            // spin around Y
+            ufoGroup.rotation.y += SETTINGS.ufoRotationSpeed * dt;
+            // hover up/down
+            const offset = ufoGroup.userData.hoverOffset;
+            const hover = Math.sin(time * SETTINGS.ufoHoverSpeed + offset) * 0.01;
+            ufoGroup.position.y += hover;
+        }
+
+        // ================
+        // LASERS
+        // ================
+        let lasers = [];
+        function shootLaser() {
+            const laserGeom = new THREE.CylinderGeometry(0.03, 0.03, 1, 8);
+            const laserMat = new THREE.MeshStandardMaterial({
+                color: 0x00ff00,
+                emissive: 0x00ff00,
+                emissiveIntensity: 0.7,
+                transparent: true,
+                opacity: 1
+            });
+            const laser = new THREE.Mesh(laserGeom, laserMat);
+            laser.rotation.x = Math.PI / 2; // so it points along +Z
+
+            // spawn from near the robot's head
+            const localPos = new THREE.Vector3(0, 2.2, 0.7);
+            robotGroup.localToWorld(localPos);
+            laser.position.copy(localPos);
+            laser.quaternion.copy(robotGroup.quaternion);
+
+            laser.userData = {
+                life: SETTINGS.laserLife
+            };
+
+            scene.add(laser);
+            lasers.push(laser);
+        }
+
+        // SECRET MENU Buttons
+        const btnUfo   = document.getElementById('btn-ufo');
+        const btnLaser = document.getElementById('btn-laser');
+
+        btnUfo.addEventListener('click', (e) => {
+            e.preventDefault();
+            spawnUFO();
+        });
+        btnLaser.addEventListener('click', (e) => {
+            e.preventDefault();
+            shootLaser();
+        });
+
+        // Also allow pressing SPACE to shoot laser
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                shootLaser();
+            }
+        });
+
+        // ================
+        // MOUSE => minor tilt of robot
+        // ================
+        let tiltAngle = 0; 
+        window.addEventListener('mousemove', (e) => {
+            // Horizontal position in range [-1..1]
+            const mouseX = e.clientX;
+            const normX  = (mouseX / window.innerWidth) * 2 - 1;
+
+            // Move robot left/right
+            robotGroup.position.x = normX * 5;
+
+            // Tilt a bit
+            tiltAngle = normX * 0.2; // tilt range
+        });
+
+        // ================
+        // WAVE & BLINK
+        // ================
+        let waveTimer   = 0;
+        let blinkTimer  = 0;
+        let isBlinking  = false;
+        const waveCycle  = 5;   // wave every 5 seconds
+        const blinkCycle = 7;   // blink every 7 seconds
+
+        // We define how we wave with the arm up in the air.
+        // The pivot is already rotated by -1.0 rad so the arm is above the head.
+        // We'll add a small wave amplitude around that base angle.
+        const waveBaseAngle = 0.4;  // from the shoulder pivot
+        const waveAmplitude = 0.3;   // how far it waves left/right
+        const waveSpeed     = 3.0;   // wave speed factor
+
+        function updateWaveAndBlink(dt) {
+            // Waving the right arm
+            waveTimer += dt;
+            if (waveTimer > waveCycle) {
+                waveTimer = 0; 
+            }
+            // wave from 0..2 seconds, then rest for remainder of waveCycle
+            let waveVal = 0;
+            if (waveTimer < 2) {
+                // Use sin() so it goes back and forth
+                waveVal = Math.sin(waveTimer * waveSpeed) * waveAmplitude;
+            }
+            // apply the wave around our base angle
+            if (rightShoulderPivot) {
+                rightShoulderPivot.rotation.z = waveBaseAngle + waveVal;
+            }
+            
+            if (leftShoulderPivot) {
+                leftShoulderPivot.rotation.z = -waveBaseAngle - waveVal;
+            }
+
+            // Blinking
+            blinkTimer += dt;
+            if (!isBlinking && blinkTimer > blinkCycle) {
+                isBlinking = true;
+                blinkTimer = 0; // reset
+            }
+            if (isBlinking) {
+                // eyes closed for 0.3s
+                if (blinkTimer < 0.3) {
+                    eyes.forEach((eye) => {
+                        eye.scale.y = 0.1; // close eyes
+                    });
+                } else {
+                    // done blinking
+                    eyes.forEach((eye) => {
+                        eye.scale.y = 1; // open
+                    });
+                    isBlinking = false;
+                }
+            }
+        }
+
+        // MAIN ANIMATION LOOP
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+            const dt = time - lastTime;
+            lastTime = time;
+
+            // Starfield rotation
+            starfield.rotation.y += 0.0005;
+
+            // Robot tilt
+            robotGroup.rotation.z = tiltAngle;
+
+            // Update lasers
+            for (let i = lasers.length - 1; i >= 0; i--) {
+                const laser = lasers[i];
+                laser.userData.life -= dt;
+                if (laser.userData.life <= 0) {
+                    scene.remove(laser);
+                    lasers.splice(i, 1);
+                } else {
+                    // move forward along the local +Z
+                    const forward = new THREE.Vector3(0, 0, SETTINGS.laserSpeed);
+                    forward.applyQuaternion(laser.quaternion);
+                    laser.position.add(forward);
+                }
+            }
+
+            // Update UFO
+            updateUFO(dt, time);
+
+            // Wave & Blink
+            updateWaveAndBlink(dt);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // LOADING SCREEN
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingScreen = document.getElementById('loading-screen');
+            const progressBar = document.getElementById('progress-bar');
+            const content = document.querySelector('.content');
+
+            // Make robot transparent initially (optional)
+            function initializeTransparency(group) {
+                if (!group) return;
+                group.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        child.material.opacity = 0;
+                        child.material.transparent = true;
+                    }
+                });
+            }
+
+            // Fade in robot
+            function fadeInRobot(group) {
+                let fadeStartTime = null;
+                const fadeDuration = 2; // 2 seconds
+
+                function animateFade(time) {
+                    if (!fadeStartTime) fadeStartTime = time;
+                    const elapsed = (time - fadeStartTime) / 1000; // seconds
+                    const alpha = Math.min(elapsed / fadeDuration, 1); // clamp to 1
+
+                    group.traverse((child) => {
+                        if (child.isMesh && child.material) {
+                            child.material.opacity = alpha;
+                        }
+                    });
+
+                    if (alpha < 1) {
+                        requestAnimationFrame(animateFade);
+                    }
+                }
+
+                requestAnimationFrame(animateFade);
+            }
+
+            window.addEventListener('load', () => {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    if (progress < 100) {
+                        progress += 10;
+                        progressBar.style.width = progress + '%';
+                    } else {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            loadingScreen.classList.add('hidden');
+                            content.classList.add('visible');
+
+                            // Make the robot transparent (optional)
+                            initializeTransparency(robotGroup);
+
+                            // Fade in
+                            setTimeout(() => {
+                                fadeInRobot(robotGroup);
+                            }, 10);
+                        }, 500);
+                    }
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
