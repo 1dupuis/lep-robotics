@@ -775,19 +775,25 @@
         });
 
         // ================
-        // MOUSE => minor tilt of robot
-        // ================
-        let tiltAngle = 0; 
+        // MOUSE => Movement and Tilt of Robot
+        // ===========================
+        let tiltAngleX = 0; 
+        let tiltAngleZ = 0;
         window.addEventListener('mousemove', (e) => {
-            // Horizontal position in range [-1..1]
-            const mouseX = e.clientX;
-            const normX  = (mouseX / window.innerWidth) * 2 - 1;
+            // Normalize mouse position to range [-1, 1]
+            const normX = (e.clientX / window.innerWidth) * 2 - 1;
+            const normY = (e.clientY / window.innerHeight) * 2 - 1;
 
-            // Move robot left/right
-            robotGroup.position.x = normX * 5;
+            // Move robot left/right and up/down
+            robotGroup.position.x = normX * 5; // Adjust the multiplier for desired movement range
+            robotGroup.position.y = -normY * 3; // Invert Y to make upward mouse movement move robot up
 
-            // Tilt a bit
-            tiltAngle = normX * 0.2; // tilt range
+            // Tilt robot based on mouse position
+            tiltAngleZ = normX * 0.2; // Tilt left/right
+            tiltAngleX = normY * 0.2; // Tilt forward/backward
+
+            robotGroup.rotation.z = tiltAngleZ;
+            robotGroup.rotation.x = tiltAngleX;
         });
 
         // ================
@@ -855,14 +861,10 @@
             requestAnimationFrame(animate);
 
             const time = clock.getElapsedTime();
-            const dt = time - lastTime;
-            lastTime = time;
+            const dt = clock.getDelta(); // Use getDelta for frame-independent timing
 
             // Starfield rotation
             starfield.rotation.y += 0.0005;
-
-            // Robot tilt
-            robotGroup.rotation.z = tiltAngle;
 
             // Update lasers
             for (let i = lasers.length - 1; i >= 0; i--) {
